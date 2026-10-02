@@ -1,29 +1,23 @@
-# API de mundo
+# world_routes.py
 
 Arquivo: `app/api/world_routes.py`. Prefixo: `/api/world`.
 
-## POST /generate
+## O que e
 
-Gera um novo mapa e o guarda como mundo atual.
+Uma unica rota, que devolve o mapa da partida corrente.
 
-Parametros de query:
+```python
+@router.get("/state", response_model=WorldMap)
+def get_world_state() -> WorldMap:
+    with manager.session() as state:
+        return state.world
+```
 
-| Nome   | Tipo | Padrao | Descricao                   |
-|--------|------|--------|-----------------------------|
-| width  | int  | 20     | Largura do mapa em celulas  |
-| height | int  | 20     | Altura do mapa em celulas   |
+## O que mudou
 
-Resposta: [WorldMap](../models/world.md).
+- **`POST /generate` foi removida.** Ela gerava um mundo global, guardado em uma variavel de modulo (`current_world`) e sem relacao com sobreviventes ou relogio. A geracao agora e o servico [world_generator](../services/world_generator.md), chamado por `POST /api/game/new`.
+- **Sem estado global na rota.** O mundo vive em `GameState.world`, entao e salvo e carregado junto com a partida.
 
-## GET /state
+## Por que assim
 
-Retorna o mundo atual. Responde 404 se nenhum mundo foi gerado.
-
-## Regras de geracao
-
-1. Celulas com `x` ou `y` multiplo de 4 sao vias (`road`) e ja nascem exploradas.
-2. As demais celulas recebem setor conforme a distancia ao centro:
-   - proximas do centro (menos de 20% da dimensao): `commercial`;
-   - distantes do centro (mais de 45% da dimensao): `forest`;
-   - demais: `residential`.
-3. Fora da floresta, cada celula tem 10% de chance de virar `industrial`.
+O frontend atual recebe o mapa dentro de `GameView` e nao usa esta rota; ela foi mantida por ser barata e util para ferramentas de depuracao e para quem quiser consumir so o mapa.

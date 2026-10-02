@@ -1,0 +1,112 @@
+"""Constantes de balanceamento do jogo.
+
+Todos os numeros que definem a dificuldade ficam aqui para que possam ser
+ajustados sem tocar nas regras.
+"""
+
+from app.models.world import SectorType
+
+START_DAY = 1
+START_HOUR = 8
+TARGET_DAY = 30
+
+NIGHT_START_HOUR = 20
+NIGHT_END_HOUR = 6
+SLEEP_HOURS = (0, 1, 2, 3, 4, 5)
+GUARD_SLEEP_HOURS = (9, 10, 11, 12, 13, 14)
+ASSAULT_HOURS = (22, 23, 0, 1, 2, 3, 4, 5)
+
+MIN_WORLD_SIZE = 8
+MAX_WORLD_SIZE = 40
+ROAD_SPACING = 4
+INDUSTRIAL_CHANCE = 0.1
+
+MAX_SURVIVORS = 12
+STARTING_SURVIVORS = 3
+
+HUNGER_DECAY = 2.0
+THIRST_DECAY = 3.0
+FATIGUE_DECAY_HOME = 1.0
+FATIGUE_DECAY_AWAY = 3.0
+SLEEP_RECOVERY = 6.0
+EAT_THRESHOLD = 50.0
+DRINK_THRESHOLD = 50.0
+EAT_RESTORE = 40.0
+DRINK_RESTORE = 40.0
+STARVATION_DAMAGE = 3.0
+EXHAUSTION_DAMAGE = 1.0
+HEALTH_REGEN = 0.5
+MORALE_LOSS = 1.0
+MORALE_GAIN = 0.3
+LOW_NEED_LEVEL = 25.0
+LOW_EFFICIENCY_LEVEL = 20.0
+LOW_EFFICIENCY_FACTOR = 0.5
+
+TREAT_BASE_HEAL = 30.0
+TREAT_SKILL_HEAL = 5.0
+
+MIN_EXPEDITION_HEALTH = 25.0
+TILES_PER_HOUR = 3
+SEARCH_HOURS = 1
+BASE_LOOT_FRACTION = 0.5
+LOOT_FRACTION_PER_SKILL = 0.1
+SCAVENGER_LOOT_BONUS = 0.1
+NIGHT_DANGER_BONUS = 0.2
+ENCOUNTER_MIN_DAMAGE = 10
+ENCOUNTER_MAX_DAMAGE = 35
+ENCOUNTER_DAMAGE_REDUCTION_PER_COMBAT = 2
+SKILL_GAIN_CHANCE = 0.3
+SKILL_CAP = 10
+
+SECTOR_DANGER = {
+    SectorType.RESIDENTIAL: 0.2,
+    SectorType.COMMERCIAL: 0.3,
+    SectorType.INDUSTRIAL: 0.35,
+    SectorType.FOREST: 0.15,
+}
+
+SURVIVOR_CHANCE = {
+    "residential": 0.15,
+    "commercial": 0.1,
+    "industrial": 0.05,
+    "forest": 0.05,
+}
+
+BARRICADE_WOOD_COST = 2
+BARRICADE_BASE_HEALTH = 20
+BARRICADE_HEALTH_PER_SKILL = 8
+BUILDER_BONUS = 1.5
+APERTURE_HEALTH_CAP = 300
+FORTIFIED_HEALTH = 150
+
+WAVE_BASE = 3
+WAVE_PER_DAY = 2.2
+ZOMBIE_DAMAGE = 4
+GUARD_MIN_HEALTH = 20.0
+GUARD_BASE_KILLS = 1
+GUARD_COMBAT_DIVISOR = 2
+GUARD_AMMO_BONUS = 2
+GUARD_FATIGUE_COST = 6.0
+INTRUDER_CAP = 12
+INTRUDER_MIN_DAMAGE = 4
+INTRUDER_MAX_DAMAGE = 10
+BREACH_MORALE_LOSS = 8.0
+
+LOG_LIMIT = 200
+AUTOSAVE_SLOT = "autosave"
+
+STARTING_RESOURCES = {
+    "food": 12,
+    "water": 12,
+    "wood": 6,
+    "scrap": 2,
+    "medicine": 1,
+    "ammo": 4,
+}
+
+SURVIVOR_NAMES = [
+    "Ana", "Bruno", "Carla", "Diego", "Elena", "Felipe", "Gabriela", "Hugo",
+    "Iris", "Joao", "Karen", "Lucas", "Marina", "Nuno", "Olivia", "Paulo",
+    "Quiteria", "Rafael", "Sofia", "Tiago", "Ursula", "Victor", "Wanda",
+    "Xavier", "Yara", "Zeca", "Alice", "Bento", "Clara", "Davi",
+]

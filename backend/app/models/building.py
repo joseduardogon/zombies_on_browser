@@ -2,7 +2,9 @@
 
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from app.models.resources import Resources
 
 
 class RoomType(str, Enum):
@@ -74,10 +76,16 @@ class Building(BaseModel):
         id: Identificador da construcao.
         type: Categoria da construcao.
         rooms: Comodos que a compoem.
-        overall_integrity: Integridade geral.
+        overall_integrity: Integridade geral, de 0 a 100.
+        loot: Recursos que ainda podem ser coletados no local.
+        searched: Se o local ja foi vasculhado por uma expedicao.
+        survivor_present: Se ha um sobrevivente isolado esperando resgate.
     """
 
     id: str
     type: str
     rooms: list[Room]
     overall_integrity: int
+    loot: Resources = Field(default_factory=Resources)
+    searched: bool = False
+    survivor_present: bool = False

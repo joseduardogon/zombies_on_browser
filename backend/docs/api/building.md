@@ -1,20 +1,27 @@
-# API de construcoes
+# building_routes.py
 
 Arquivo: `app/api/building_routes.py`. Prefixo: `/api/building`.
 
-## POST /generate/{type}
+## O que e
 
-Gera uma construcao nova, guarda em memoria e a retorna.
+Entrega a planta de uma construcao.
 
-Tipos aceitos: `residential`, `commercial`, `industrial`, `forest`. Qualquer outro valor gera uma residencia.
+```python
+@router.get("/{building_id}", response_model=Building)
+def get_building(building_id: str) -> Building:
+    with manager.session() as state:
+        return build_building_view(state, building_id)
+```
 
-Resposta: [Building](../models/building.md).
+O identificador tem a forma `b-x-y` (por exemplo `b-13-5`). Na primeira consulta a construcao e gerada e guardada; nas seguintes volta a mesma. Identificador desconhecido responde 404.
 
-## GET /{building_id}
+## O que mudou
 
-Retorna uma construcao ja gerada. Responde 404 se o identificador for desconhecido.
+- **`POST /generate/{type}` foi removida.** O prototipo gerava uma casa nova a cada clique, e a construcao sumia ao fechar o painel. Agora cada lote tem uma construcao fixa.
+- **O tipo vem do mapa.** O cliente nao escolhe mais "o que" gerar; a celula ja sabe se e uma casa, loja, fabrica ou floresta.
 
-## Limitacoes atuais
+## Por que assim
 
-- O frontend gera uma construcao nova a cada clique; as celulas do mapa ainda nao guardam `building_id`.
-- O armazenamento e um dicionario em memoria.
+- **GET, nao POST.** Consultar uma construcao nao altera a partida do ponto de vista do jogador (a geracao e deterministica), entao o verbo correto e GET.
+- **Esconde o que nao foi descoberto.** A resposta passa por `build_building_view` ([schemas](schemas.md)): pilhagem zerada antes da primeira expedicao e nunca revela sobrevivente isolado.
+- **A sessao grava o autosave.** Gerar uma construcao muda `state.buildings`, e a sessao salva ao sair, entao um save nunca fica sem uma construcao ja vista.

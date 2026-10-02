@@ -1,124 +1,147 @@
 # Zombies on Browser
 
-Jogo de sobrevivência contra zumbis para navegador, inspirado em Infection Free Zone. O jogador comanda um grupo de sobreviventes em uma cidade tomada por zumbis: explora o mapa, vasculha construções, reforça abrigos e tenta resistir.
+Jogo de sobrevivência contra zumbis para navegador, inspirado em Infection Free Zone. O jogador comanda um grupo de sobreviventes em uma cidade tomada por zumbis: escolhe um abrigo, vasculha construções atrás de suprimentos, reforça portas e janelas e tenta resistir por 30 dias.
 
 Este repositório reúne os dois projetos do jogo:
 
 | Pasta | Projeto | Tecnologias |
 |-------|---------|-------------|
-| [backend](backend) | API e regras do jogo | Python 3.12, FastAPI, Pydantic, Poetry |
+| [backend](backend) | API e regras do jogo | Python 3.12, FastAPI, Pydantic, SQLite, Poetry |
 | [frontend](frontend) | Interface no navegador | React 19, TypeScript, Vite, Tailwind CSS 4, Zustand |
 
-Cada projeto tem sua própria pasta `docs`, com uma subpasta por módulo.
+Cada projeto tem sua própria pasta `docs`, com uma subpasta por módulo e arquivos Markdown que explicam o que foi feito, como e por quê, citando o código.
 
 ## Como o jogo funciona
 
-### A ideia
+### Objetivo
 
-A referência é o estilo de Infection Free Zone: um jogo de gerenciamento e sobrevivência visto de cima, em que o foco não é atirar, e sim administrar recursos, pessoas e defesas. A interface imita um painel de comando ("Commander Interface // Z-CITY"), com visual de terminal verde sobre fundo escuro.
+Sobreviver até o fim do dia 30. O jogo termina em derrota se todos os sobreviventes morrem. A interface imita um painel de comando ("Commander Interface // Z-City"), com visual de terminal verde sobre fundo escuro.
 
-O loop pretendido é:
+### Fluxo de uma partida
 
-1. O jogador vê a cidade em um mapa isométrico.
-2. Escolhe uma construção e entra nela para ver a planta.
-3. Sobreviventes saem para coletar recursos, reforçam as aberturas (portas e janelas) e montam a defesa do abrigo.
-4. Os zumbis atacam as aberturas. Quanto mais frágil a barricada, mais fácil a invasão.
-5. Fome, sede, cansaço, moral e saúde dos sobreviventes limitam o que o grupo consegue fazer.
+1. **Nova partida.** O jogador escolhe o tamanho do mapa e, se quiser, uma semente. A mesma semente gera o mesmo mapa.
+2. **Escolha do abrigo.** O mapa aparece em visão isométrica. O jogador seleciona uma casa, loja ou fábrica e a transforma em abrigo. A escolha importa: cada tipo tem número de comodos, aberturas e durabilidade diferentes.
+3. **Grupo inicial.** Nascem três sobreviventes (um líder, um guarda e um coletor) e um estoque de comida, água, madeira, sucata, remédios e munição.
+4. **Passagem do tempo.** O relógio avança uma hora de jogo a cada 1,5 s reais (pausa, 1x, 2x ou 4x). Cada hora desgasta os sobreviventes e pode disparar eventos.
+5. **Dia: preparar e coletar.** O jogador envia sobreviventes em expedições, reforça aberturas com madeira, trata feridos e distribui funções.
+6. **Noite: resistir.** Às 20h chega uma onda de zumbis que cerca o abrigo até as 6h.
+7. **Fim.** Vitória ao chegar ao dia 31 (30 dias vividos); derrota se todos morrerem.
 
 ### O mundo
 
-O mapa é uma grade (20x20 por padrão) gerada pelo servidor a cada partida:
+O mapa é uma grade gerada pelo servidor (20x20 por padrão, de 8 a 40):
 
-- **Vias:** toda linha ou coluna múltipla de 4 vira rua. As ruas já começam exploradas.
-- **Setores:** as demais células são lotes, definidos pela distância ao centro.
-  - Centro: comercial (prédios altos de vidro).
-  - Zona intermediária: residencial.
-  - Periferia: floresta.
-  - Fora da floresta, cada lote tem 10% de chance de ser industrial.
-- **Exploração:** cada célula guarda se já foi explorada e, no futuro, qual construção ela contém.
+- **Vias:** toda linha ou coluna múltipla de 4. Já começam exploradas.
+- **Setores:** os demais lotes são definidos pela distância ao centro: comercial no centro, residencial na zona intermediária e floresta na periferia. Fora da floresta, 10% dos lotes viram industriais.
+- **Construções:** cada lote tem uma construção fixa, gerada na primeira vez que alguém olha para ela. Casas têm sala, cozinha, quartos e talvez garagem; lojas têm salão e depósito; fábricas têm galpão e depósito; florestas têm uma clareira e uma barraca.
 
-### As construções
+### Sobreviventes
 
-Ao entrar em um lote, o servidor gera uma construção conforme o setor:
+Cada um tem:
 
-| Setor | Resultado | Integridade |
-|-------|-----------|-------------|
-| Residencial | Casa com sala, cozinha e quarto | 100 |
-| Comercial | Loja de salão único com porta de vidro e vitrine | 80 |
-| Industrial | Galpão com porta reforçada e uma janela | 90 |
-| Floresta | Clareira com uma barraca abandonada | 10 |
+- **Necessidades (0 a 100):** saúde, fome, sede, energia e moral. Comer e beber é automático quando há estoque.
+- **Habilidades:** construção, combate, coleta e medicina. Sobem com o uso.
+- **Função:** líder, coletor, construtor, guarda ou ocioso. A função muda o que a pessoa faz melhor: guardas defendem à noite, construtores reforçam 50% mais, coletores trazem mais.
+- **Situação:** no abrigo, em expedição ou morto.
 
-Cada construção é formada por cômodos (com dimensões, isolamento e segurança) e cada cômodo tem aberturas: portas e janelas com estado (aberta, fechada, barricada, quebrada) e durabilidade. As aberturas são o centro da mecânica de defesa: é por elas que os zumbis entram.
+Guardas vigiam à noite e dormem de dia. Quem está com energia ou moral abaixo de 20 rende metade. Sobreviventes isolados podem ser encontrados nas construções e se juntar ao grupo (até 12).
 
-### Os sobreviventes
+### Expedições
 
-O modelo já está definido, mas ainda não é usado pelo jogo. Cada sobrevivente tem:
+Um sobrevivente sai, viaja até uma construção (3 células por hora), vasculha por uma hora e volta. A viagem é de ida e volta. Ao voltar, traz uma fração da pilhagem do local, maior com mais habilidade de coleta. O que sobra fica lá para uma próxima visita. Há risco de encontrar zumbis: depende do setor, sobe à noite e pode ferir ou matar. Enquanto está fora, a pessoa não defende o abrigo.
 
-- **Função:** líder, coletor, construtor, guarda ou ocioso.
-- **Necessidades (0 a 100):** fome, sede, cansaço, moral e saúde.
-- **Habilidades:** construção, combate, coleta e medicina.
-- **Localização** no mapa e **construção** em que está alocado.
+### Defesa
+
+Cada porta e janela do abrigo tem durabilidade. O jogador gasta 2 madeiras para reforçá-la (até 300 pontos), e uma abertura quebrada pode ser consertada do mesmo jeito. A integridade do abrigo é a média da saúde das aberturas.
+
+### A noite
+
+- A onda do dia cresce com o tempo (cerca de 5 zumbis no dia 1 e 70 no dia 30) e chega em oito rodadas, das 22h às 5h.
+- Os guardas aptos atiram: cada um abate `1 + combate / 2` zumbis por rodada, mais 2 se gastar uma munição.
+- Os zumbis que sobram batem na **abertura mais fraca**. Se ela quebra, eles entram, ferem sobreviventes e derrubam a moral.
+- Ao amanhecer, quem restou recua.
+
+O desafio é equilibrar suprimentos, madeira, munição e gente: cada pessoa fora coletando é uma a menos defendendo.
 
 ## Arquitetura
 
 ```
 navegador  ->  frontend (Vite, porta 5173)  ->  /api (proxy)  ->  backend (FastAPI, porta 8000)
+                                                                       |
+                                                                  SQLite (autosave)
 ```
 
-O frontend é só a apresentação: o estado do mundo e das construções é gerado e guardado pelo backend. Em desenvolvimento, o Vite encaminha as chamadas de `/api` para `http://127.0.0.1:8000`, e o backend libera CORS para as portas 5173 e 5174.
+O frontend só exibe e pede ações. **Toda regra roda no servidor**, que também decide o que acontece a cada hora. O relógio do frontend apenas pede "avance 1 hora" em intervalos, então o jogo é igual em qualquer velocidade. Cada ação devolve a partida inteira atualizada, e a interface troca seu estado por ela.
+
+A partida é salva automaticamente a cada ação e retomada ao reiniciar o servidor.
 
 ### Backend
 
 ```
 backend/app/
-  main.py        aplicação, CORS e registro das rotas
-  api/           rotas HTTP (mundo e construções)
-  models/        modelos Pydantic (mundo, construção, sobrevivente)
-  services/      geração procedural de construções
+  main.py        aplicação, CORS, tratamento de erros e retomada do save
+  core/          balanceamento, erros de domínio e configuração
+  api/           rotas HTTP e esquemas
+  models/        modelos Pydantic e o estado da partida
+  services/      regras, geração, simulação e persistência
 ```
 
-Rotas existentes:
+Rotas:
 
 | Método | Caminho | Função |
 |--------|---------|--------|
-| GET | `/` e `/health` | Status da API |
-| POST | `/api/world/generate?width=&height=` | Gera um novo mundo |
-| GET | `/api/world/state` | Retorna o mundo atual |
-| POST | `/api/building/generate/{tipo}` | Gera uma construção |
-| GET | `/api/building/{id}` | Busca uma construção gerada |
+| POST | `/api/game/new` | Cria partida (tamanho e semente) |
+| GET | `/api/game` | Consulta a partida corrente |
+| POST | `/api/game/tick` | Avança de 1 a 24 horas |
+| GET / POST | `/api/game/saves`, `/save`, `/load` | Lista, grava e carrega saves |
+| GET | `/api/world/state` | Mapa da cidade |
+| GET | `/api/building/{id}` | Planta de uma construção |
+| POST | `/api/base/claim` | Escolhe o abrigo |
+| POST | `/api/base/reinforce` | Reforça ou conserta uma abertura |
+| GET | `/api/survivors` | Lista sobreviventes |
+| POST | `/api/survivors/{id}/role` | Muda a função |
+| POST | `/api/survivors/{id}/treat` | Trata um ferido |
+| POST | `/api/expeditions` | Envia uma expedição |
+
+Erros de regra respondem `{"detail": "..."}` com status 400, 404 ou 409.
 
 ### Frontend
 
 ```
 frontend/src/
-  App.tsx                  raiz; gera o mundo ao abrir e trata carregamento e erro
-  components/CityMap3D.tsx mapa isométrico em CSS 3D
-  components/BuildingView  planta da construção selecionada
-  store/gameStore.ts       estado global (Zustand) e chamadas à API
-  lib/api.ts               cliente HTTP
-  city-3d.css              estilos do mapa 3D
+  App.tsx          raiz: carregamento, erro, tela inicial e jogo
+  components/      tela inicial, barra superior, mapa 3D, painéis, sobreposições
+  hooks/           relógio em tempo real
+  store/           estado global (Zustand)
+  lib/             cliente HTTP e chamadas tipadas
+  types/           tipos que espelham o backend
 ```
 
-O mapa não usa canvas nem WebGL: cada célula é um elemento HTML transformado com CSS 3D, com alturas e cores por setor (comercial 60px, industrial 25px, residencial 16px). Florestas têm árvores e algumas ruas têm um carro animado.
+O mapa não usa canvas nem WebGL: cada célula é um elemento HTML transformado com CSS 3D. Arrastar move a câmera e a roda do mouse dá zoom.
 
 ## Estado atual
 
-Funciona hoje:
+Implementado:
 
-- Gerar o mundo e exibi-lo em visão isométrica.
-- Clicar em uma célula e ver a planta da construção correspondente, com cômodos e aberturas.
-- Tratamento de falha de conexão com o servidor.
+- Geração de mundo e de construções, reproduzíveis por semente, com construção fixa por lote.
+- Relógio do jogo com dia e noite, velocidades e avanço manual.
+- Sobreviventes com necessidades, habilidades, funções, cura e morte.
+- Expedições de coleta com viagem, risco, pilhagem finita e resgate de sobreviventes.
+- Reforço e conserto de aberturas com madeira.
+- Ondas noturnas, guardas, munição, cerco à abertura mais fraca e invasão.
+- Condições de vitória e derrota, com tela de fim de jogo.
+- Persistência em SQLite: autosave e saves nomeados.
+- Interface com mapa 3D arrastável, painéis de sobreviventes, abrigo, local e diário.
+- Testes automatizados do backend (58).
 
 Ainda não existe:
 
-- Sobreviventes em jogo (só o modelo).
-- Passagem de tempo, dia e noite.
-- Coleta de recursos, inventário e construção.
-- Zumbis e simulação de ataque.
-- Persistência: tudo fica em memória e some ao reiniciar o servidor.
-- Vínculo entre célula e construção: hoje cada clique gera uma construção nova.
-- Arrastar para mover a câmera (o HUD já anuncia como "em breve").
-- Testes automatizados.
+- Construção de novas estruturas além do reforço de aberturas, e fabricação de itens (sucata ainda não tem uso).
+- Eventos aleatórios além dos encontros em expedições, e variedade de zumbis.
+- Mais de um abrigo ou expansão do território.
+- Som, animações de sobreviventes e zumbis no mapa.
+- Testes automatizados do frontend.
+- Equilíbrio fino: um jogador automático simples vence cerca de 58% das partidas, e os números ficam em `backend/app/core/balance.py`.
 
 ## Como executar
 
@@ -138,17 +161,17 @@ npm run dev
 
 Abra `http://localhost:5173`. A documentação interativa da API fica em `http://127.0.0.1:8000/docs`.
 
+Testes do backend: `poetry run pytest` dentro de `backend`. Verificações do frontend: `npm run lint` e `npm run build` dentro de `frontend`.
+
 ## Próximos passos sugeridos
 
-1. Associar `building_id` a cada célula, para que a mesma construção seja reaberta.
-2. Criar o relógio do jogo (turnos, dia e noite) no backend.
-3. Expor sobreviventes pela API e exibi-los na interface.
-4. Implementar coleta, inventário e barricadas.
-5. Simular ondas de zumbis atacando as aberturas.
-6. Persistir o estado em SQLite e cobrir as regras com testes.
+1. Dar uso à sucata: oficina para fabricar munição e reforços melhores.
+2. Estruturas do abrigo (horta, coletor de água, enfermaria) que produzam recursos e exijam trabalhadores.
+3. Eventos aleatórios e zumbis de tipos diferentes.
+4. Testes do frontend e de ponta a ponta.
+5. Ajuste de dificuldade com base em partidas reais.
 
 ## Convenções
 
 - Comentários no código somente no formato de docstrings do Google (docstrings em Python e JSDoc em TypeScript).
-- Cada projeto mantém sua documentação em `docs`, com uma subpasta por módulo e arquivos Markdown.
-- Nenhuma mensagem de commit ou arquivo cita ferramentas de IA.
+- Cada projeto mantém sua documentação em `docs`, com uma subpasta por módulo e arquivos Markdown. Toda feature nova atualiza a documentação do módulo que alterou.

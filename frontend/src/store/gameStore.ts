@@ -1,122 +1,208 @@
 import { create } from 'zustand';
-import { isAxiosError } from 'axios';
-import api from '../lib/api';
+import { ApiError, gameApi } from '../lib/gameApi';
+import type {
+    Building,
+    GameView,
+    SaveInfo,
+    SurvivorRole,
+    WorldCell,
+} from '../types/game';
 
-/** Posicao em uma grade 2D. */
-export interface Coordinates {
-    x: number;
-    y: number;
-}
+/** Velocidades do relogio: 0 pausa e os demais valores multiplicam o ritmo. */
+export type Speed = 0 | 1 | 2 | 4;
 
-/** Celula do mapa, espelho de `WorldCell` no backend. */
-export interface WorldCell {
-    coordinates: Coordinates;
-    sector_type: string;
-    is_explored: boolean;
-    building_id?: string | null;
-}
-
-/** Mapa do mundo, espelho de `WorldMap` no backend. */
-export interface WorldMap {
-    width: number;
-    height: number;
-    cells: WorldCell[];
-}
-
-/** Porta ou janela de um comodo. */
-export interface Aperture {
-    id: string;
-    type: 'door' | 'window';
-    state: string;
-    health: number;
-}
-
-/** Comodo de uma construcao. */
-export interface Room {
-    id: string;
-    name: string;
-    type: string;
-    dimensions: { width: number; length: number };
-    apertures: Aperture[];
-}
-
-/** Construcao explorada pelo jogador. */
-export interface Building {
-    id: string;
-    type: string;
-    rooms: Room[];
-    overall_integrity: number;
+/** Aviso temporario mostrado ao jogador. */
+export interface Notice {
+    kind: 'error' | 'info';
+    message: string;
 }
 
 /** Estado global do jogo e as acoes que o alteram. */
-interface GameState {
-    world: WorldMap | null;
+interface GameStore {
+    game: GameView | null;
+    loaded: boolean;
+    busy: boolean;
+    fatalError: string | null;
+    notice: Notice | null;
+    speed: Speed;
+    selectedCell: WorldCell | null;
     selectedBuilding: Building | null;
-    isLoading: boolean;
-    error: string | null;
-    generateWorld: () => Promise<void>;
-    fetchWorldState: () => Promise<void>;
-    fetchBuilding: (type: string) => Promise<void>;
-    closeBuilding: () => void;
+    saves: SaveInfo[];
+
+    init: () => Promise<void>;
+    newGame: (width: number, height: number, seed?: number) => Promise<void>;
+    claimBase: (buildingId: string) => Promise<void>;
+    tick: (hours: number) => Promise<void>;
+    setSpeed: (speed: Speed) => void;
+    selectCell: (cell: WorldCell | null) => Promise<void>;
+    sendExpedition: (survivorId: string, buildingId: string) => Promise<void>;
+    reinforce: (apertureId: string, survivorId: string) => Promise<void>;
+    setRole: (survivorId: string, role: SurvivorRole) => Promise<void>;
+    treat: (survivorId: string) => Promise<void>;
+    refreshSaves: () => Promise<void>;
+    saveGame: (slot: string) => Promise<void>;
+    loadGame: (slot: string) => Promise<void>;
+    dismissNotice: () => void;
 }
 
 /**
- * Converte um erro de requisicao em mensagem legivel.
+ * Converte uma falha em mensagem para o jogador.
  *
  * @param err Erro capturado.
- * @return Mensagem para exibir ao jogador.
+ * @return O texto do erro.
  */
-const describeError = (err: unknown): string => {
-    if (isAxiosError(err)) {
-        if (err.response) {
-            return `Server Error: ${err.response.status} ${err.response.statusText}`;
-        }
-        if (err.request) {
-            return 'Network Error: Unreachable (Check Backend)';
-        }
-    }
-    return `Error: ${err instanceof Error ? err.message : String(err)}`;
-};
+const messageOf = (err: unknown): string =>
+    err instanceof Error ? err.message : String(err);
 
 /** Store global do jogo. */
-export const useGameStore = create<GameState>((set) => ({
-    world: null,
-    selectedBuilding: null,
-    isLoading: false,
-    error: null,
-
-    generateWorld: async () => {
-        set({ isLoading: true, error: null });
-        try {
-            const response = await api.post<WorldMap>('/api/world/generate');
-            set({ world: response.data, isLoading: false });
-        } catch (err) {
-            console.error('Generate World Error:', err);
-            set({ error: describeError(err), isLoading: false });
+export const useGameStore = create<GameStore>((set, get) => {
+    /**
+     * Aplica uma nova visao da partida e mantem a selecao coerente.
+     *
+     * A celula selecionada e atualizada com os dados novos e, se ela acabou
+     * de ser explorada, a construcao e buscada de novo para mostrar a pilhagem.
+     *
+     * @param game Nova visao da partida.
+     */
+    const applyGame = (game: GameView) => {
+        const { selectedCell, selectedBuilding } = get();
+        const fresh = selectedCell
+            ? game.world.cells.find(
+                  (c) =>
+                      c.coordinates.x === selectedCell.coordinates.x &&
+                      c.coordinates.y === selectedCell.coordinates.y,
+              ) ?? null
+            : null;
+        set({
+            game,
+            selectedCell: fresh,
+            speed: game.status === 'playing' ? get().speed : 0,
+        });
+        if (fresh?.building_id && selectedBuilding && !selectedBuilding.searched && fresh.is_explored) {
+            void get().selectCell(fresh);
         }
-    },
+    };
 
-    fetchWorldState: async () => {
-        set({ isLoading: true, error: null });
+    /**
+     * Executa uma acao que devolve a partida e trata os erros.
+     *
+     * Falhas de rede viram erro fatal; falhas de regra viram aviso.
+     *
+     * @param action Funcao que chama a API.
+     * @return True se a acao teve sucesso.
+     */
+    const run = async (action: () => Promise<GameView>): Promise<boolean> => {
+        set({ busy: true });
         try {
-            const response = await api.get<WorldMap>('/api/world/state');
-            set({ world: response.data, isLoading: false });
+            applyGame(await action());
+            set({ busy: false, fatalError: null });
+            return true;
         } catch (err) {
-            console.error(err);
-            set({ error: 'Failed to fetch world state', isLoading: false });
+            if (err instanceof ApiError && err.status === 0) {
+                set({ busy: false, fatalError: err.message, speed: 0 });
+            } else {
+                set({ busy: false, notice: { kind: 'error', message: messageOf(err) } });
+            }
+            return false;
         }
-    },
+    };
 
-    fetchBuilding: async (type: string) => {
-        set({ isLoading: true, error: null });
-        try {
-            const response = await api.post<Building>(`/api/building/generate/${type}`);
-            set({ selectedBuilding: response.data, isLoading: false });
-        } catch (err) {
-            console.error(err);
-            set({ error: 'Failed to enter building', isLoading: false });
-        }
-    },
+    return {
+        game: null,
+        loaded: false,
+        busy: false,
+        fatalError: null,
+        notice: null,
+        speed: 0,
+        selectedCell: null,
+        selectedBuilding: null,
+        saves: [],
 
-    closeBuilding: () => set({ selectedBuilding: null }),
-}));
+        init: async () => {
+            try {
+                set({ game: await gameApi.getGame(), fatalError: null });
+            } catch (err) {
+                if (err instanceof ApiError && err.status === 404) {
+                    set({ game: null, fatalError: null });
+                } else {
+                    set({ fatalError: messageOf(err) });
+                }
+            }
+            set({ loaded: true });
+            await get().refreshSaves();
+        },
+
+        newGame: async (width, height, seed) => {
+            set({ selectedCell: null, selectedBuilding: null, speed: 0 });
+            await run(() => gameApi.newGame(width, height, seed));
+        },
+
+        claimBase: async (buildingId) => {
+            await run(() => gameApi.claimBase(buildingId));
+        },
+
+        tick: async (hours) => {
+            if (get().busy) return;
+            await run(() => gameApi.tick(hours));
+        },
+
+        setSpeed: (speed) => set({ speed }),
+
+        selectCell: async (cell) => {
+            set({ selectedCell: cell, selectedBuilding: null });
+            if (!cell?.building_id) return;
+            try {
+                const building = await gameApi.getBuilding(cell.building_id);
+                if (get().selectedCell?.building_id === cell.building_id) {
+                    set({ selectedBuilding: building });
+                }
+            } catch (err) {
+                set({ notice: { kind: 'error', message: messageOf(err) } });
+            }
+        },
+
+        sendExpedition: async (survivorId, buildingId) => {
+            await run(() => gameApi.sendExpedition(survivorId, buildingId));
+        },
+
+        reinforce: async (apertureId, survivorId) => {
+            await run(() => gameApi.reinforce(apertureId, survivorId));
+        },
+
+        setRole: async (survivorId, role) => {
+            await run(() => gameApi.setRole(survivorId, role));
+        },
+
+        treat: async (survivorId) => {
+            await run(() => gameApi.treat(survivorId));
+        },
+
+        refreshSaves: async () => {
+            try {
+                set({ saves: await gameApi.listSaves() });
+            } catch {
+                set({ saves: [] });
+            }
+        },
+
+        saveGame: async (slot) => {
+            try {
+                set({
+                    saves: await gameApi.save(slot),
+                    notice: { kind: 'info', message: `Game saved to "${slot}".` },
+                });
+            } catch (err) {
+                set({ notice: { kind: 'error', message: messageOf(err) } });
+            }
+        },
+
+        loadGame: async (slot) => {
+            set({ selectedCell: null, selectedBuilding: null, speed: 0 });
+            if (await run(() => gameApi.load(slot))) {
+                set({ notice: { kind: 'info', message: `Loaded "${slot}".` } });
+            }
+        },
+
+        dismissNotice: () => set({ notice: null }),
+    };
+});

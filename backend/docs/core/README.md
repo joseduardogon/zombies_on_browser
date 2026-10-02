@@ -1,23 +1,15 @@
 # Modulo core
 
-Arquivo: `app/main.py`.
+Pasta: `app/core/`. Reune o que nao pertence a nenhuma regra especifica do jogo, mas e usado por todas elas.
 
-Cria a aplicacao FastAPI, configura o CORS e registra os routers.
+| Arquivo | Documento | Papel |
+|---------|-----------|-------|
+| `balance.py` | [balance](balance.md) | Todas as constantes de balanceamento |
+| `errors.py` | [errors](errors.md) | `GameError`, o erro de regra do jogo |
+| `config.py` | [config](config.md) | Caminho do banco de dados |
 
-## CORS
+A aplicacao FastAPI em si (`app/main.py`) tambem esta documentada aqui, em [main](main.md).
 
-Origens liberadas: `localhost` e `127.0.0.1` nas portas 5173 e 5174 (servidor de desenvolvimento do frontend).
+## Por que existe
 
-## Endpoints
-
-| Metodo | Caminho   | Descricao                         |
-|--------|-----------|-----------------------------------|
-| GET    | `/`       | Status e mensagem da API          |
-| GET    | `/health` | Verificacao de saude do servico   |
-
-## Routers registrados
-
-| Prefixo         | Modulo                          |
-|-----------------|---------------------------------|
-| `/api/world`    | [world_routes](../api/world.md) |
-| `/api/building` | [building_routes](../api/building.md) |
+Antes desta etapa os numeros do jogo (tamanho das ondas, fome por hora, custo de barricada) estariam espalhados dentro das funcoes. Concentra-los em um unico arquivo permite ajustar a dificuldade sem tocar nas regras, e permite que os testes troquem um valor com `monkeypatch` para forcar um cenario.

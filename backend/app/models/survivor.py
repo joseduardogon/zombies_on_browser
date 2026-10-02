@@ -17,6 +17,14 @@ class SurvivorRole(str, Enum):
     IDLE = "idle"
 
 
+class SurvivorStatus(str, Enum):
+    """Situacao de um sobrevivente."""
+
+    HOME = "home"
+    AWAY = "away"
+    DEAD = "dead"
+
+
 class SurvivorNeeds(BaseModel):
     """Necessidades de um sobrevivente, de 0 a 100.
 
@@ -58,6 +66,7 @@ class Survivor(BaseModel):
         id: Identificador.
         name: Nome.
         role: Funcao atual.
+        status: Se esta no abrigo, em expedicao ou morto.
         needs: Necessidades.
         skills: Habilidades.
         current_location: Posicao no mapa.
@@ -67,6 +76,7 @@ class Survivor(BaseModel):
     id: str
     name: str
     role: SurvivorRole = SurvivorRole.IDLE
+    status: SurvivorStatus = SurvivorStatus.HOME
     needs: SurvivorNeeds = Field(default_factory=SurvivorNeeds)
     skills: SurvivorSkills = Field(default_factory=SurvivorSkills)
     current_location: Coordinates | None = None
