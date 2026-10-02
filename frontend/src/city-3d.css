@@ -1,0 +1,182 @@
+.viewport-3d {
+    perspective: 2000px;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #111827;
+}
+
+.city-plane {
+    transform: rotateX(60deg) rotateZ(-45deg);
+    transform-style: preserve-3d;
+    width: fit-content;
+    padding: 100px;
+    background: #1f2937;
+    box-shadow: 0 0 100px rgba(0, 0, 0, 0.8);
+    transition: transform 0.5s ease;
+}
+
+.city-cell {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    transform-style: preserve-3d;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.city-cell:hover {
+    transform: translateZ(5px);
+}
+
+.block-3d {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    pointer-events: none;
+}
+
+.face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+}
+
+.face-top {
+    transform: translateZ(var(--height, 0px));
+    background: var(--color-top);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.face-side-1 {
+    transform: rotateX(-90deg) translateY(50%) translateZ(calc(var(--height, 0px) / 2));
+    height: var(--height, 0px);
+    width: 100%;
+    background: var(--color-side);
+    bottom: 0px;
+    transform-origin: bottom;
+}
+
+.face-side-2 {
+    transform: rotateY(90deg) translateX(50%) translateZ(calc(var(--height, 0px) / 2));
+    height: var(--height, 0px);
+    width: 100%;
+    background: var(--color-side-dark);
+    right: 0px;
+    transform-origin: right bottom;
+    bottom: 0;
+}
+
+.type-residential {
+    --height: 16px;
+    --color-top: #7f1d1d;
+    --color-side: #b91c1c;
+    --color-side-dark: #991b1b;
+}
+
+.type-residential .face-side-1,
+.type-residential .face-side-2 {
+    background-image:
+        linear-gradient(#fef3c7 2px, transparent 2px),
+        linear-gradient(90deg, #fef3c7 2px, transparent 2px);
+    background-size: 8px 8px;
+    background-color: #b91c1c;
+    border: 1px solid #7f1d1d;
+}
+
+.type-commercial {
+    --height: 60px;
+    --color-top: #e0f2fe;
+    --color-side: #0ea5e9;
+    --color-side-dark: #0284c7;
+}
+
+.type-commercial .face-side-1,
+.type-commercial .face-side-2 {
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+    background-size: 5px 100%;
+    background-color: #0ea5e9;
+    opacity: 0.9;
+}
+
+.type-industrial {
+    --height: 25px;
+    --color-top: #4b5563;
+    --color-side: #374151;
+    --color-side-dark: #1f2937;
+}
+
+.type-industrial .face-side-1,
+.type-industrial .face-side-2 {
+    background-image: repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 0, 0, 0.3) 2px, rgba(0, 0, 0, 0.3) 4px);
+    background-color: #9ca3af;
+}
+
+.type-road {
+    --height: 1px;
+    --color-top: #374151;
+}
+
+.type-road .face-top {
+    background-image: linear-gradient(90deg, transparent 48%, #fbbf24 48%, #fbbf24 52%, transparent 52%);
+    background-size: 20px 100%;
+    background-color: #1f2937;
+    border: none;
+}
+
+.type-forest {
+    --height: 0px;
+}
+
+.type-forest .block-3d {
+    display: none;
+}
+
+.tree {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 25px solid #16a34a;
+    transform: rotateX(-90deg) translateZ(10px) translateY(-50%);
+    transform-origin: bottom center;
+    left: 10px;
+    top: 10px;
+    filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5));
+}
+
+.tree::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 8px;
+    background: #78350f;
+    top: 25px;
+    left: -2px;
+}
+
+@keyframes drive {
+    0% {
+        transform: translate3d(0, 0, 2px);
+    }
+    100% {
+        transform: translate3d(40px, 0, 2px);
+    }
+}
+
+.car {
+    position: absolute;
+    width: 8px;
+    height: 14px;
+    background: #ef4444;
+    top: 13px;
+    left: 0;
+    box-shadow: 1px 1px 2px black;
+    animation: drive 3s linear infinite;
+    z-index: 10;
+}
