@@ -3,8 +3,12 @@
 Pasta: `tests/`. Rodam com:
 
 ```bash
+poetry lock
+poetry install
 poetry run pytest
 ```
+
+O `poetry lock` so e necessario na primeira vez: `pytest` e `httpx` foram declarados em `pyproject.toml` sem regenerar o `poetry.lock`.
 
 Sao 58 testes, todos rapidos (menos de um segundo no total).
 

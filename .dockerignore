@@ -1,0 +1,10 @@
+.git
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/*.pyc
+backend/data
+backend/tests
+**/docs
+**/.pytest_cache

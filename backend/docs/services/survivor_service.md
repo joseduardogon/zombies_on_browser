@@ -45,7 +45,7 @@ O jogador nao precisa clicar para alimentar cada pessoa: quando a saciedade cai 
     return hour in balance.SLEEP_HOURS
 ```
 
-Guardas vigiam de noite e dormem de dia. Sem isso, um guarda ficava sem recuperar energia nunca; os testes automaticos mostraram grupos inteiros morrendo de exaustao quando a funcao de guarda era dada a muita gente.
+Guardas vigiam de noite e dormem de dia. Sem isso, a energia de um guarda so podia cair: ele nunca tinha uma janela de sono, porque o sono dos demais cai de madrugada, justo quando ele esta de vigia.
 
 ### Saude, moral e morte
 

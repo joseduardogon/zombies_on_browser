@@ -40,7 +40,7 @@ EAT_RESTORE = 40.0
 DRINK_RESTORE = 40.0
 ```
 
-Com essas taxas, cada pessoa come uma vez a cada 25 horas e bebe uma vez a cada 17. Tres sobreviventes gastam cerca de 3 comidas e 4,5 aguas por dia, e o estoque inicial (12 e 12) dura em torno de quatro dias. Essa pressao e o que obriga o jogador a sair para coletar.
+Com essas taxas, a saciedade de uma pessoa cai de ~90 a 50 e ela come de novo: como cada refeicao restaura 40 pontos e a fome cai 2 por hora, o ritmo de equilibrio e uma comida a cada 20 horas, e uma agua a cada 13 (a sede cai 3 por hora). Tres sobreviventes gastam portanto cerca de 3,6 comidas e 5,4 aguas por dia, e o estoque inicial de 12 de cada dura pouco: a agua dura pouco mais de 2 dias e a comida, cerca de 3. Essa pressao e o que obriga o jogador a sair para coletar logo no inicio.
 
 Os parametros de combate:
 

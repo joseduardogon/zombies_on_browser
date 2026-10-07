@@ -1,0 +1,13 @@
+services:
+  zombies:
+    build: .
+    image: zombies-on-browser
+    container_name: zombies
+    ports:
+      - "7001:7001"
+    volumes:
+      - zombies-data:/data
+    restart: unless-stopped
+
+volumes:
+  zombies-data:

@@ -11,10 +11,8 @@ Os tipos TypeScript que espelham as respostas do backend. Sao a "tradução" dos
 ### Unioes em vez de enums
 
 ```ts
-/** Fase da partida. */
 export type GameStatus = 'setup' | 'playing' | 'won' | 'lost';
-
-/** Funcao de um sobrevivente. */
+...
 export type SurvivorRole = 'leader' | 'scavenger' | 'builder' | 'guard' | 'idle';
 ```
 
@@ -24,11 +22,9 @@ O `tsconfig` ativa `erasableSyntaxOnly`, que proibe `enum` do TypeScript. Unioes
 
 ```ts
 export const RESOURCE_KEYS = ['food', 'water', 'wood', 'scrap', 'medicine', 'ammo'] as const;
-
-/** Nome de um recurso. */
+...
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
-
-/** Estoque de recursos. */
+...
 export type Resources = Record<ResourceKey, number>;
 ```
 

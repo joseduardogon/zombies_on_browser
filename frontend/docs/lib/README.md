@@ -24,9 +24,10 @@ Sem `baseURL`: as chamadas a `/api/...` passam pelo proxy do Vite (`vite.config.
 
 ```ts
 export class ApiError extends Error {
-    /** Status HTTP, ou 0 se o servidor nao respondeu. */
     readonly status: number;
 ```
+
+O `status` e o codigo HTTP, ou `0` se o servidor nao respondeu.
 
 ```ts
             if (err.response) {

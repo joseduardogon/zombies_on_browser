@@ -149,6 +149,7 @@ Em dois terminais, a partir da raiz do repositório:
 
 ```bash
 cd backend
+poetry lock
 poetry install
 poetry run uvicorn app.main:app --reload --port 8000
 ```
@@ -159,7 +160,17 @@ npm install
 npm run dev
 ```
 
-Abra `http://localhost:5173`. A documentação interativa da API fica em `http://127.0.0.1:8000/docs`.
+O `poetry lock` só é necessário uma vez: as dependências de desenvolvimento (`pytest` e `httpx`) foram acrescentadas ao `pyproject.toml` sem regenerar o `poetry.lock`. Abra `http://localhost:5173`. A documentação interativa da API fica em `http://127.0.0.1:8000/docs`.
+
+### Docker (tudo em um container, porta 7001)
+
+Um unico comando constroi a imagem e sobe o jogo:
+
+```bash
+docker compose up --build -d
+```
+
+Abra `http://localhost:7001`. Os saves ficam no volume `zombies-data`. Para parar: `docker compose down` (o volume continua; use `docker compose down -v` para apagar os saves). O `Dockerfile` compila o frontend em um estagio e o entrega ao backend, que o serve na mesma porta da API.
 
 Testes do backend: `poetry run pytest` dentro de `backend`. Verificações do frontend: `npm run lint` e `npm run build` dentro de `frontend`.
 

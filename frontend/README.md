@@ -43,6 +43,8 @@ Cada modulo tem uma subpasta em [docs](docs) com seus arquivos Markdown:
 - [types](docs/types/README.md)
 - [styles](docs/styles/README.md)
 
+Os trechos de codigo citados nos documentos omitem as docstrings e os comentarios JSDoc; uma linha `...` marca um trecho omitido entre dois blocos de codigo.
+
 ## Convencoes
 
 - Comentarios no codigo somente no formato JSDoc, equivalente aos docstrings do Google.

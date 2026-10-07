@@ -68,5 +68,5 @@ Quando o cliente consulta uma construcao, ele recebe uma **copia**:
 
 ## Por que assim
 
-- **Uma resposta unica.** O frontend poderia fazer cinco chamadas depois de cada acao; com `GameView` faz uma. O custo e enviar o mapa a cada resposta (cerca de 25 KB em 20x20), que e pequeno diante da simplicidade ganha.
+- **Uma resposta unica.** O frontend poderia fazer cinco chamadas depois de cada acao; com `GameView` faz uma. O custo e enviar a visao inteira a cada resposta (cerca de 40 KB em um mapa 20x20, medido logo apos escolher o abrigo, e o mapa e a maior parte), que e pequeno diante da simplicidade ganha.
 - **Copia, nao o objeto.** `model_copy(update=...)` evita alterar a construcao real ao esconder campos.

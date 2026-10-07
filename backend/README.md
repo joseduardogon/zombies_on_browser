@@ -10,6 +10,7 @@ API em FastAPI do jogo de sobrevivencia zumbi para navegador, inspirado em Infec
 ## Execucao
 
 ```bash
+poetry lock
 poetry install
 poetry run uvicorn app.main:app --reload --port 8000
 ```
@@ -20,7 +21,7 @@ Testes:
 poetry run pytest
 ```
 
-O caminho do banco pode ser trocado com a variavel de ambiente `ZOB_DB_PATH`. As dependencias de desenvolvimento (`pytest` e `httpx`) foram declaradas em `pyproject.toml`; rode `poetry lock` para atualizar o `poetry.lock`.
+O caminho do banco pode ser trocado com a variavel de ambiente `ZOB_DB_PATH`. As dependencias de desenvolvimento (`pytest` e `httpx`) foram declaradas em `pyproject.toml`; o `poetry lock` do primeiro bloco acima atualiza o `poetry.lock`, que ainda reflete so as dependencias anteriores. Sem ele, o `poetry install` recusa o arquivo.
 
 A documentacao interativa fica em `http://127.0.0.1:8000/docs`.
 
@@ -47,6 +48,8 @@ Cada modulo tem uma subpasta em [docs](docs) com seus arquivos Markdown:
 - [models](docs/models/README.md)
 - [services](docs/services/README.md)
 - [tests](docs/tests/README.md)
+
+Os trechos de codigo citados nos documentos omitem as docstrings; uma linha `...` marca um trecho omitido entre dois blocos de codigo.
 
 ## Convencoes
 

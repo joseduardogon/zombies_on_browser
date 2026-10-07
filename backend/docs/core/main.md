@@ -42,6 +42,19 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 Ao iniciar o servidor, a ultima partida salva automaticamente volta para a memoria. Sem isso, reiniciar o backend apagaria a partida em andamento, que era uma das limitacoes listadas no README raiz.
 
+### Frontend no mesmo processo
+
+```python
+static_dir = get_static_dir()
+if static_dir is not None:
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")
+else:
+```
+
+Com `ZOB_STATIC_DIR` definida, o FastAPI serve o frontend compilado em `/`, e a API continua em `/api`. Assim um unico container, em uma unica porta, entrega o jogo inteiro. Sem a variavel, a rota `/` volta a devolver o JSON de status.
+
+A montagem fica **por ultimo** no arquivo: uma montagem em `/` captura qualquer caminho, entao so pode ser registrada depois das rotas de `/api` e de `/health`, que precisam ter prioridade. Pelo mesmo motivo, a rota `/` de status so existe no ramo `else`: se existisse nos dois casos, ela esconderia a pagina do jogo.
+
 ## Por que assim
 
 - **`lifespan` em vez de `on_event`.** E o mecanismo atual do FastAPI; `on_event` esta depreciado.

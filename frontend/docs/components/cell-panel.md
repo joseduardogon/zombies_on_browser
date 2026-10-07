@@ -11,12 +11,12 @@ O painel da aba "Location": o que se sabe do lote selecionado e o que o jogador 
 ### Espelhos do backend
 
 ```tsx
-/** Celulas percorridas por hora; espelha `TILES_PER_HOUR` do backend. */
 const TILES_PER_HOUR = 3;
-
-/** Horas de busca no local; espelha `SEARCH_HOURS` do backend. */
+...
 const SEARCH_HOURS = 1;
 ```
+
+Cada uma tem um comentario de documentacao dizendo qual constante do backend espelha (`TILES_PER_HOUR` e `SEARCH_HOURS`).
 
 O painel mostra o tempo da viagem **antes** de enviar o pedido, e para isso reproduz a formula do servidor ([expedition_service](../../../backend/docs/services/expedition_service.md)):
 

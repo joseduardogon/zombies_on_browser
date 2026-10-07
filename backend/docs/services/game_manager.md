@@ -20,10 +20,11 @@ Segura a partida corrente na memoria do processo, serializa o acesso a ela e a g
             self.repository.save(balance.AUTOSAVE_SLOT, self.state)
 ```
 
-Toda rota que mexe na partida faz:
+Toda rota que mexe na partida abre uma sessao. A rota de tick, por exemplo:
 
 ```python
     with manager.session() as state:
+        state.require_playing()
         simulation.advance_hours(state, request.hours)
         return build_view(state)
 ```

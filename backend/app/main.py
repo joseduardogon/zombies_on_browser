@@ -6,6 +6,7 @@ from typing import AsyncIterator
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.base_routes import router as base_router
 from app.api.building_routes import router as building_router
@@ -13,6 +14,7 @@ from app.api.expedition_routes import router as expedition_router
 from app.api.game_routes import router as game_router
 from app.api.survivor_routes import router as survivor_router
 from app.api.world_routes import router as world_router
+from app.core.config import get_static_dir
 from app.core.errors import GameError
 from app.services.game_manager import manager
 
@@ -71,16 +73,6 @@ app.include_router(survivor_router, prefix="/api/survivors", tags=["survivors"])
 app.include_router(expedition_router, prefix="/api/expeditions", tags=["expeditions"])
 
 
-@app.get("/")
-def read_root() -> dict[str, str]:
-    """Retorna a mensagem de status da API.
-
-    Returns:
-        Dicionario com o status e uma mensagem de boas-vindas.
-    """
-    return {"status": "ok", "message": "Zombie Prevention Protocol Active"}
-
-
 @app.get("/health")
 def health_check() -> dict[str, str]:
     """Verifica se a API esta respondendo.
@@ -89,3 +81,18 @@ def health_check() -> dict[str, str]:
         Dicionario com o estado de saude do servico.
     """
     return {"status": "healthy"}
+
+
+static_dir = get_static_dir()
+if static_dir is not None:
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")
+else:
+
+    @app.get("/")
+    def read_root() -> dict[str, str]:
+        """Retorna a mensagem de status da API.
+
+        Returns:
+            Dicionario com o status e uma mensagem de boas-vindas.
+        """
+        return {"status": "ok", "message": "Zombie Prevention Protocol Active"}

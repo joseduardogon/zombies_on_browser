@@ -53,5 +53,5 @@ Corpo: `{"hours": 1}` (1 a 24). Antes de escolher o abrigo responde 409. O front
 ## Por que assim
 
 - **`/new` em vez de `/generate`.** Gerar mundo e iniciar partida sao a mesma operacao para o jogador, e isso evita que existam mundos soltos, sem relogio nem sobreviventes.
-- **O `tick` valida a fase antes.** Como `advance_hours` ja chama `require_playing`, a chamada explicita na rota deixa a regra evidente e garante o 409 mesmo se pedirem 0 horas validas.
+- **O `tick` valida a fase na rota.** `advance_hours` nao reclama quando a partida nao esta em andamento: ela apenas para (`break`) ao primeiro tick. A chamada explicita a `require_playing` na rota e o que produz o 409; sem ela, pedir horas antes de escolher o abrigo responderia 200 sem avancar nada.
 - **Salvar devolve a lista.** O menu do frontend se atualiza na mesma resposta.
